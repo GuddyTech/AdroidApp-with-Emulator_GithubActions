@@ -24,8 +24,8 @@ jobs:
           java-version: '11'
           distribution: 'temurin' # Specify the Java distribution (temurin, zulu, etc.)
 
-      # Install Android SDK and create emulator
-      - name: Setup Android Emulator
+      # Install Android SDK and platform tools (adb, emulator)
+      - name: Install Android SDK
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
@@ -34,6 +34,15 @@ jobs:
           unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools
           yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --licenses
           $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64"
+          
+          # Add platform tools to PATH
+          echo "export PATH=$HOME/android-sdk/platform-tools:\$PATH" >> $HOME/.bashrc
+          source $HOME/.bashrc
+          adb --version  # Check if adb is available
+
+      # Create and start Android Emulator
+      - name: Setup Android Emulator
+        run: |
           echo "no" | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" -d pixel
           $HOME/android-sdk/emulator/emulator -avd test -no-window -no-audio &
 
