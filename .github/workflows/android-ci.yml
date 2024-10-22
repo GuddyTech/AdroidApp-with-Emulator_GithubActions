@@ -25,7 +25,7 @@ jobs:
           distribution: 'temurin' # Specify the Java distribution (temurin, zulu, etc.)
 
       # Install Android SDK and platform tools (adb, emulator)
-      - name: Install Android SDK
+      - name: Install Android SDK and Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
@@ -34,11 +34,10 @@ jobs:
           unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools
           yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --licenses
           $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64"
-          
-          # Add platform tools to PATH
-          echo "export PATH=$HOME/android-sdk/platform-tools:\$PATH" >> $HOME/.bashrc
-          source $HOME/.bashrc
-          adb --version  # Check if adb is available
+
+          # Add platform tools to PATH for the current session
+          export PATH=$HOME/android-sdk/platform-tools:$PATH
+          adb --version  # Verify adb is available
 
       # Create and start Android Emulator
       - name: Setup Android Emulator
@@ -48,7 +47,9 @@ jobs:
 
       # Wait for the emulator to boot
       - name: Wait for Emulator
-        run: adb wait-for-device
+        run: |
+          export PATH=$HOME/android-sdk/platform-tools:$PATH  # Ensure adb is in the PATH for this step
+          adb wait-for-device
 
       # Run tests
       - name: Run tests
@@ -56,4 +57,6 @@ jobs:
 
       # Stop the emulator
       - name: Stop Emulator
-        run: adb -s emulator-5554 emu kill
+        run: |
+          export PATH=$HOME/android-sdk/platform-tools:$PATH  # Ensure adb is in the PATH for this step
+          adb -s emulator-5554 emu kill
