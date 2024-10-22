@@ -43,13 +43,27 @@ jobs:
       - name: Setup Android Emulator
         run: |
           echo "no" | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" -d pixel
-          $HOME/android-sdk/emulator/emulator -avd test -no-window -no-audio &
+          $HOME/android-sdk/emulator/emulator -avd test -no-window -no-audio -no-snapshot -delay-adb &
 
-      # Wait for the emulator to boot
-      - name: Wait for Emulator
+      # Wait for the emulator to boot with a timeout
+      - name: Wait for Emulator to Boot
         run: |
           export PATH=$HOME/android-sdk/platform-tools:$PATH  # Ensure adb is in the PATH for this step
-          adb wait-for-device
+          boot_completed=""
+          timeout=300  # 5 minutes
+          timer=0
+          until [[ "$boot_completed" =~ "1" ]] || [[ $timer -ge $timeout ]]; do
+            boot_completed=$(adb shell getprop sys.boot_completed 2>&1)
+            echo "Waiting for emulator to boot..."
+            sleep 5
+            timer=$((timer + 5))
+          done
+          if [[ "$boot_completed" =~ "1" ]]; then
+            echo "Emulator booted successfully!"
+          else
+            echo "Emulator failed to boot within the timeout."
+            exit 1
+          fi
 
       # Run tests
       - name: Run tests
